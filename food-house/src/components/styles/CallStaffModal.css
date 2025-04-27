@@ -1,0 +1,72 @@
+/* CallStaffModal.css */
+
+/* Tùy chỉnh toàn bộ modal */
+.modal-content {
+    border-radius: 16px !important;
+    /* background-color: #f8f9fa; Màu nền nhẹ nhàng */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Header modal */
+  .modal-header {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+  }
+  
+  /* Body modal */
+  .modal-body {
+    padding-top: 0;
+  }
+  
+  /* Footer modal */
+  .modal-footer {
+    border-top: none;
+  }
+  
+  /* Các nút */
+  button {
+    border-radius: 12px !important; /* Bo góc nút */
+    font-size: 1rem;
+  }
+  
+  /* Nút gửi yêu cầu */
+  button.btn-success {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+    font-size: 1.1rem;
+    font-weight: bold;
+  }
+  
+  button.btn-success:hover {
+    background-color: #218838 !important;
+    border-color: #1e7e34 !important;
+  }
+  
+  /* Nút outline */
+  button.btn-outline-secondary {
+    border: 2px solid #6c757d;
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 0.8rem;
+    width: auto !important;
+    padding: 5px 12px;
+    margin-right: 20px;
+
+  }
+  
+  button.btn-outline-secondary:hover {
+    background-color: #6c757d !important;
+    color: white !important;
+  }
+  
+  /* Nút nhanh */
+  button.mb-2 {
+    margin-bottom: 8px;
+  }
+  
