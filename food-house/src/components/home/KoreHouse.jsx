@@ -8,18 +8,30 @@ import {
   FaDollarSign,
   FaConciergeBell,
 } from "react-icons/fa";
-import "../styles/KoreHouse.css"; // Import CSS styles for KoreHouse component
+import "../styles/KoreHouse.css"; 
 import CallStaffModal from "../staff/CallStaffModal";
 import MenuPage from "../Menu/MenuPage";
-import logo from "../pics/logo-food-house.png"; // Import logo image
+import TableSelectionModal from "../tables/TableSelectionModal"; // Import component mới
+import logo from "../pics/logo-food-house.png";
 
 const KoreHouse = () => {
   const [page, setPage] = useState("home");
-
   const [showModal, setShowModal] = useState(false);
+  const [showTableModal, setShowTableModal] = useState(false); // State cho modal chọn bàn
+  const [tableInfo, setTableInfo] = useState({ tableId: null, customerName: "Vui lòng chọn bàn tại đây" }); // Thông tin bàn đã chọn
 
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
+  
+  // Xử lý mở/đóng modal chọn bàn
+  const handleOpenTableModal = () => setShowTableModal(true);
+  const handleCloseTableModal = () => setShowTableModal(false);
+  
+  // Xử lý khi chọn bàn xong
+  const handleSelectTable = (info) => {
+    setTableInfo(info);
+  };
+
   return (
     <Container className="py-3">
       {page === "home" && (
@@ -41,11 +53,19 @@ const KoreHouse = () => {
                   </Col>
                   <Col xs={12} className="d-flex align-items-center mt-2">
                     <FaUtensils className="me-2" />
-                    11 - Tại Quán
+                    {tableInfo.tableId ? `Bàn ${tableInfo.tableId}` : "Chưa chọn bàn"}
                   </Col>
                   <Col xs={12} className="d-flex align-items-center mt-2">
                     <FaUserAlt className="me-2" />
-                    Chung <FaEdit className="ms-2 text-primary" />
+                    {tableInfo.customerName} 
+                    <Button 
+                      variant="link" 
+                      className="p-0 ms-2 text-primary" 
+                      onClick={handleOpenTableModal}
+                      style={{ border: 'none', background: 'none' }}
+                    >
+                      <FaEdit />
+                    </Button>
                   </Col>
                 </Row>
               </Card.Text>
@@ -87,6 +107,13 @@ const KoreHouse = () => {
               </Button>
             </Col>
           </Row>
+          
+          {/* Modal chọn bàn */}
+          <TableSelectionModal 
+            show={showTableModal}
+            handleClose={handleCloseTableModal}
+            onSelectTable={handleSelectTable}
+          />
         </>
       )}
       {page === "menu" && <MenuPage onBack={() => setPage("home")} />}
