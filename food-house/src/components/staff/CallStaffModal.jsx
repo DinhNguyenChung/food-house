@@ -4,17 +4,15 @@ import "../styles/CallStaffModal.css";
 
 const CallStaffModal = ({ show, handleClose }) => {
   const [reason, setReason] = useState("");
-  const [quickReason, setQuickReason] = useState("");
 
   const handleSendRequest = () => {
-    const selectedReason = reason || quickReason;
-    console.log("Lý do gọi nhân viên:", selectedReason);
+    console.log("Lý do gọi nhân viên:", reason);
     setReason(""); // Reset lý do
     handleClose(); // Đóng modal
   };
 
   return (
-    <Modal show={show} onHide={handleClose} centered style={{ marginTop: "125%" }}>
+    <Modal show={show} onHide={handleClose} centered>
       <Modal.Header closeButton>
         <Modal.Title>Gọi nhân viên</Modal.Title>
       </Modal.Header>
@@ -31,42 +29,43 @@ const CallStaffModal = ({ show, handleClose }) => {
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label>Chọn nhanh lý do</Form.Label>
-            <Row>
-              <Button
-                //   variant="outline-secondary"
-                variant="outline-secondary"
-                className="w-100 mb-2 buttonSuggest"
-                //   onClick={() => setQuickReason('Gọi thêm món')}
-                onClick={() => setReason("Gọi thêm món")}
-              >
-                Gọi thêm món
-              </Button>
-              <Button
-                variant="outline-secondary"
-                className="w-100 mb-2"
-                //   onClick={() => setQuickReason('Bổ sung dụng cụ ăn uống')}
-                onClick={() => setReason("Bổ sung dụng cụ ăn uống")}
-              >
-                Bổ sung dụng cụ ăn uống
-              </Button>
-            </Row>
-            <Row>
-              <Button
-                variant="outline-secondary"
-                className="w-100 mb-2"
-                //   onClick={() => setQuickReason('Thanh toán')}
-                onClick={() => setReason("Thanh toán")}
-              >
-                Thanh toán
-              </Button>
-              <Button
-                variant="outline-secondary"
-                className="w-100 mb-2"
-                //   onClick={() => setQuickReason('Yêu cầu khác')}
-                onClick={() => setReason("Yêu cầu khác")}
-              >
-                Yêu cầu khác
-              </Button>
+            <Row className="g-2">
+              <Col xs={12}>
+                <Button
+                  variant="outline-secondary"
+                  className="w-100 mb-2 quick-reason-btn"
+                  onClick={() => setReason("Gọi thêm món")}
+                >
+                  Gọi thêm món
+                </Button>
+              </Col>
+              <Col xs={12}>
+                <Button
+                  variant="outline-secondary"
+                  className="w-100 mb-2 quick-reason-btn"
+                  onClick={() => setReason("Bổ sung dụng cụ ăn uống")}
+                >
+                  Bổ sung dụng cụ ăn uống
+                </Button>
+              </Col>
+              <Col xs={12}>
+                <Button
+                  variant="outline-secondary"
+                  className="w-100 mb-2 quick-reason-btn"
+                  onClick={() => setReason("Thanh toán")}
+                >
+                  Thanh toán
+                </Button>
+              </Col>
+              <Col xs={12}>
+                <Button
+                  variant="outline-secondary"
+                  className="w-100 mb-2 quick-reason-btn"
+                  onClick={() => setReason("Yêu cầu khác")}
+                >
+                  Yêu cầu khác
+                </Button>
+              </Col>
             </Row>
           </Form.Group>
         </Form>

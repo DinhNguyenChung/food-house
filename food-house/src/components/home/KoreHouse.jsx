@@ -11,6 +11,7 @@ import {
 import "../styles/KoreHouse.css"; // Import CSS styles for KoreHouse component
 import CallStaffModal from "../staff/CallStaffModal";
 import MenuPage from "../Menu/MenuPage";
+import logo from "../pics/logo-food-house.png"; // Import logo image
 
 const KoreHouse = () => {
   const [page, setPage] = useState("home");
@@ -27,11 +28,11 @@ const KoreHouse = () => {
           <Card className="mb-3">
             <Card.Img
               variant="top"
-              src="https://i.ibb.co/BTC7Sz3/pexels-quang-nguyen-vinh-222549-6710689.jpg"
-              alt="Kore House"
+              src={logo}
+              alt="Food House"
             />
             <Card.Body>
-              <Card.Title as="h5">Kore House</Card.Title>
+              <Card.Title as="h5">Food House</Card.Title>
               <Card.Text>
                 <Row>
                   <Col xs={12} className="d-flex align-items-center">

@@ -44,7 +44,7 @@
   
   /* Menu Category Button */
   .category-btn {
-    background-color: #ff6b6b;
+    background-color: #ec6f6f;
     border: none;
     border-radius: 50%;
     width: 45px;
@@ -93,7 +93,7 @@
     box-shadow: 0 3px 10px rgba(0,0,0,0.08);
     height: 100%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
   }
   
   .menu-card:hover {

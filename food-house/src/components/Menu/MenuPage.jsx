@@ -179,7 +179,7 @@ const MenuPage = ({ onBack }) => {
                   className="add-to-cart-btn w-100 d-flex align-items-center justify-content-center"
                   onClick={() => addToCart(item)}
                 >
-                  <FaPlus className="me-2" /> Thêm vào giỏ
+                  <FaPlus className="me-2" /> 
                 </Button>
               </Card.Body>
             </Card>
