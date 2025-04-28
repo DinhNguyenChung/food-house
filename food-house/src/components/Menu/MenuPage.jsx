@@ -168,20 +168,26 @@ const MenuPage = ({ onBack }) => {
       {/* Danh sách món ăn */}
       <Row className="menu-items-grid">
         {filteredItems.map((item) => (
-          <Col xs={12} sm={6} lg={4} key={item.id} className="mb-4">
+          <Col xs={12} sm={12} md={12} key={item.id} className="mb-3">
             <Card className="menu-card">
-              <Card.Img variant="top" src={item.image} alt={item.name} className="menu-img" />
-              <Card.Body className="menu-card-body">
-                <Card.Title className="menu-item-title">{item.name}</Card.Title>
-                <Card.Text className="menu-item-price">{item.price.toLocaleString()}đ</Card.Text>
-                <Button
-                  variant="success"
-                  className="add-to-cart-btn w-100 d-flex align-items-center justify-content-center"
-                  onClick={() => addToCart(item)}
-                >
-                  <FaPlus className="me-2" /> 
-                </Button>
-              </Card.Body>
+              <div className="menu-card-content">
+                <Card.Body className="menu-card-body">
+                  <Card.Title className="menu-item-title">{item.name}</Card.Title>
+                  <div className="menu-card-footer">
+                    <Card.Text className="menu-item-price">{item.price.toLocaleString()}đ</Card.Text>
+                    <Button
+                      variant="success"
+                      className="add-to-cart-btn"
+                      onClick={() => addToCart(item)}
+                    >
+                      <FaPlus />
+                    </Button>
+                  </div>
+                </Card.Body>
+              </div>
+              <div className="menu-img-container">
+                <Card.Img src={item.image} alt={item.name} className="menu-img" />
+              </div>
             </Card>
           </Col>
         ))}
