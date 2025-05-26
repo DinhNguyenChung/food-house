@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FaTimes } from "react-icons/fa";
 
 const TableSelectionModal = ({ show, handleClose, onSelectTable }) => {
+  console.log("Modal show status:", show);
   const [tables, setTables] = useState(
     Array(20)
       .fill()
