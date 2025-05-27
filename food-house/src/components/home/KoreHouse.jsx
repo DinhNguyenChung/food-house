@@ -15,6 +15,8 @@ import TableSelectionModal from "../tables/TableSelectionModal";
 import LoginForm from "../auth/LoginForm";
 import SignUpForm from "../auth/SignUpForm";
 import logo from "../pics/logo-food-house.png";
+import PaymentModal from "../payment/PaymentModal";
+
 
 const KoreHouse = () => {
   const [page, setPage] = useState("home");
@@ -48,6 +50,51 @@ const KoreHouse = () => {
 
   const handleOpenSignUpModal = () => setShowSignUpModal(true);
   const handleCloseSignUpModal = () => setShowSignUpModal(false);
+  // Payment modal handler
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+const [paymentCooldown, setPaymentCooldown] = useState(false);
+const [remainingPaymentTime, setRemainingPaymentTime] = useState(300);
+const endTimeRef = useRef(null); // Lưu thời gian kết thúc
+
+const handleOpenPaymentModal = () => {
+  setShowPaymentModal(true);
+
+  if (!paymentCooldown) {
+    const now = Date.now();
+    const endTime = now + 300 * 1000; // 5 phút = 300s = 300000ms
+    endTimeRef.current = endTime;
+    setPaymentCooldown(true);
+  }
+};
+
+
+    useEffect(() => {
+      let timer;
+
+      if (paymentCooldown && endTimeRef.current) {
+        timer = setInterval(() => {
+          const now = Date.now();
+          const timeLeft = Math.max(0, Math.floor((endTimeRef.current - now) / 1000));
+
+          setRemainingPaymentTime(timeLeft);
+
+          if (timeLeft <= 0) {
+            clearInterval(timer);
+            setPaymentCooldown(false);
+            endTimeRef.current = null;
+          }
+        }, 1000);
+      }
+
+      // Cleanup function
+      return () => {
+        if (timer) clearInterval(timer);
+      };
+    }, [paymentCooldown]);
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false);
+  };
+ 
 
   const handleLogin = (userData) => {
     setCurrentUser(userData);
@@ -87,8 +134,11 @@ const KoreHouse = () => {
       {/* Login and signUp */}
       <div className="flex text-center mb-6 justify-end">
         {isLoggedIn ? (
-          <div className="flex items-center relative">
-            <span className="text-blue-700 font-medium mr-2">{currentUser.name}</span>
+          <div className="flex items-center relative ">
+            <div className="flex -gray-700 mr-4 flex items-center flex-col md:flex-row">
+              <span className="font-bold " >Nhân Viên </span>
+              <span className="text-blue-700 font-medium mr-2">{currentUser.name}</span>
+            </div>
             <div className="relative">
               <button
                 onClick={() => setShowUserDropdown(!showUserDropdown)}
@@ -163,14 +213,14 @@ const KoreHouse = () => {
           alt="Food House Background"
         />
 
-        {/* Logo ở giữa ảnh, nổi lên trên */}
+       {/* Logo ở giữa ảnh, nổi lên trên */}
         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 self-center">
-            <img
-              src={logo}
-              alt="Food House Logo"
-              className="w-24 h-24 md:w-32 md:h-32 object-contain bg-white rounded-full shadow-lg"
-            />
-      </div>
+          <img
+            src={logo}
+            alt="Food House Logo"
+            className="w-24 h-24 md:w-32 md:h-32 object-contain bg-white rounded-full shadow-lg"
+          />
+        </div>
 
           {/* Nội dung bên dưới */}
           <div className="p-6 mt-4">
@@ -209,8 +259,18 @@ const KoreHouse = () => {
           <FaConciergeBell className="mr-2" /> Gọi nhân viên
         </button>
         
-        <button className="bg-[#00D4FF] hover:bg-[#94BBE9] font-bold flex items-center justify-center py-3 px-4 border border-sky-300 text-sky-800 rounded-lg hover:text-white transition-all duration-200">
+        <button 
+          onClick={handleOpenPaymentModal}
+          className={`bg-[#00D4FF] hover:bg-[#94BBE9] font-bold flex items-center justify-center py-3 px-4 border border-sky-300 text-sky-800 rounded-lg hover:text-white transition-all duration-200 ${
+            paymentCooldown ? 'relative' : ''
+          }`}
+        >
           <FaDollarSign className="mr-2" /> Gọi thanh toán
+          {paymentCooldown && !showPaymentModal && (
+            <span className="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+              !
+            </span>
+          )}
         </button>
         
         <button
@@ -240,9 +300,14 @@ const KoreHouse = () => {
         handleSignUp={handleSignUp}
         handleOpenLogin={handleOpenLoginModal}
       />
+      <PaymentModal 
+        show={showPaymentModal}
+        handleClose={handleClosePaymentModal}
+        remainingTime={remainingPaymentTime}
+      />
     </>   
   )}
-  {page === "menu" && <MenuPage onBack={() => setPage("home")} />}
+  {page === "menu" && <MenuPage onBack={() => setPage("home")} tableInfo={tableInfo} />}
 </div>
   );
 };
