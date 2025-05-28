@@ -8,6 +8,7 @@ import {
   FaConciergeBell,
   FaSignOutAlt,
   FaCog,
+  FaFileInvoiceDollar
 } from "react-icons/fa";
 import CallStaffModal from "../staff/CallStaffModal";
 import MenuPage from "../Menu/MenuPage";
@@ -16,7 +17,7 @@ import LoginForm from "../auth/LoginForm";
 import SignUpForm from "../auth/SignUpForm";
 import logo from "../pics/logo-food-house.png";
 import PaymentModal from "../payment/PaymentModal";
-
+import OrderManagement from "../orders/OrderManagement";
 
 const KoreHouse = () => {
   const [page, setPage] = useState("home");
@@ -223,27 +224,39 @@ const handleOpenPaymentModal = () => {
         </div>
 
           {/* Nội dung bên dưới */}
-          <div className="p-6 mt-4">
-            <h5 className="text-2xl font-bold text-neutral-800 mb-4">Food House</h5>
-            <div className="space-y-3 text-neutral-600">
-              <div className="flex items-center">
-                <FaClock className="mr-3 text-blue-500" />
-                <span>Giờ mở cửa: Hôm nay 10:00 - 21:30</span>
+         <div className="p-6 mt-4 border box-border border-gray-200 rounded-lg flex flex-col">
+            <div>
+              <h5 className="text-2xl font-bold text-neutral-800 mb-4">Food House</h5>
+              <div className="space-y-3 text-neutral-600">
+                <div className="flex items-center">
+                  <FaClock className="mr-3 text-blue-500" />
+                  <span>Giờ mở cửa: Hôm nay 10:00 - 21:30</span>
+                </div>
+                <div className="flex items-center">
+                  <FaUtensils className="mr-3 text-blue-500" />
+                  <span>{tableInfo.tableId ? `Bàn ${tableInfo.tableId}` : "Chưa chọn bàn"}</span>
+                </div>
+                <div className="flex items-center">
+                  <FaUserAlt className="mr-3 text-blue-500" />
+                  <span>{tableInfo.customerName}</span>
+                  <button 
+                    className="ml-3 text-blue-500 hover:text-blue-700 bg-blue-50 p-1.5 rounded-full" 
+                    onClick={handleOpenTableModal}
+                  >
+                    <FaEdit />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center">
-                <FaUtensils className="mr-3 text-blue-500" />
-                <span>{tableInfo.tableId ? `Bàn ${tableInfo.tableId}` : "Chưa chọn bàn"}</span>
-              </div>
-              <div className="flex items-center">
-                <FaUserAlt className="mr-3 text-blue-500" />
-                <span>{tableInfo.customerName}</span>
-                <button 
-                  className="ml-3 text-blue-500 hover:text-blue-700 bg-blue-50 p-1.5 rounded-full" 
-                  onClick={handleOpenTableModal}
-                >
-                  <FaEdit />
-                </button>
-              </div>
+            </div>
+            
+            {/* Quản lý hoá đơn dành cho quản lý - updated */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setPage("orderManagement")}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
+              >
+                <FaFileInvoiceDollar className="mr-2" /> Quản lý hóa đơn
+              </button>
             </div>
           </div>
      </div>
@@ -308,6 +321,7 @@ const handleOpenPaymentModal = () => {
     </>   
   )}
   {page === "menu" && <MenuPage onBack={() => setPage("home")} tableInfo={tableInfo} />}
+  {page === "orderManagement" && <OrderManagement onBack={() => setPage("home")} />}
 </div>
   );
 };
