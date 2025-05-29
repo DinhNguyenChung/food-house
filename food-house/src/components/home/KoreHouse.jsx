@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useDispatch, useSelector } from 'react-redux';
+import { logout } from '../../redux/slices/authSlice';
 import {
   FaClock,
   FaUtensils,
@@ -8,30 +10,33 @@ import {
   FaConciergeBell,
   FaSignOutAlt,
   FaCog,
-  FaFileInvoiceDollar
+  FaFileInvoiceDollar,
+  FaUsers
 } from "react-icons/fa";
 import CallStaffModal from "../staff/CallStaffModal";
 import MenuPage from "../Menu/MenuPage";
 import TableSelectionModal from "../tables/TableSelectionModal";
 import LoginForm from "../auth/LoginForm";
-import SignUpForm from "../auth/SignUpForm";
+// import SignUpForm from "../auth/SignUpForm";
 import logo from "../pics/logo-food-house.png";
 import PaymentModal from "../payment/PaymentModal";
 import OrderManagement from "../orders/OrderManagement";
+import StaffManagement from "../staff-management/StaffManagement"; // Thêm import cho component mới
 
 const KoreHouse = () => {
-  const [page, setPage] = useState("home");
+ const [page, setPage] = useState("home");
   const [showModal, setShowModal] = useState(false);
   const [showTableModal, setShowTableModal] = useState(false);
   const [tableInfo, setTableInfo] = useState({ tableId: null, customerName: "Vui lòng chọn bàn tại đây" });
   
-  // Auth states
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
+  // Get auth state from Redux
+  const auth = useSelector(state => state.auth);
+  const isAuthenticated = auth?.isAuthenticated && auth?.user;
+  const user = auth?.user || {};
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showSignUpModal, setShowSignUpModal] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   
+  const dispatch = useDispatch();
   const userDropdownRef = useRef(null);
 
   // Modal handlers
@@ -49,70 +54,54 @@ const KoreHouse = () => {
   const handleOpenLoginModal = () => setShowLoginModal(true);
   const handleCloseLoginModal = () => setShowLoginModal(false);
 
-  const handleOpenSignUpModal = () => setShowSignUpModal(true);
-  const handleCloseSignUpModal = () => setShowSignUpModal(false);
   // Payment modal handler
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-const [paymentCooldown, setPaymentCooldown] = useState(false);
-const [remainingPaymentTime, setRemainingPaymentTime] = useState(300);
-const endTimeRef = useRef(null); // Lưu thời gian kết thúc
+  const [paymentCooldown, setPaymentCooldown] = useState(false);
+  const [remainingPaymentTime, setRemainingPaymentTime] = useState(300);
+  const endTimeRef = useRef(null);
 
-const handleOpenPaymentModal = () => {
-  setShowPaymentModal(true);
+  const handleOpenPaymentModal = () => {
+    setShowPaymentModal(true);
 
-  if (!paymentCooldown) {
-    const now = Date.now();
-    const endTime = now + 300 * 1000; // 5 phút = 300s = 300000ms
-    endTimeRef.current = endTime;
-    setPaymentCooldown(true);
-  }
-};
+    if (!paymentCooldown) {
+      const now = Date.now();
+      const endTime = now + 300 * 1000;
+      endTimeRef.current = endTime;
+      setPaymentCooldown(true);
+    }
+  };
 
+  useEffect(() => {
+    let timer;
 
-    useEffect(() => {
-      let timer;
+    if (paymentCooldown && endTimeRef.current) {
+      timer = setInterval(() => {
+        const now = Date.now();
+        const timeLeft = Math.max(0, Math.floor((endTimeRef.current - now) / 1000));
 
-      if (paymentCooldown && endTimeRef.current) {
-        timer = setInterval(() => {
-          const now = Date.now();
-          const timeLeft = Math.max(0, Math.floor((endTimeRef.current - now) / 1000));
+        setRemainingPaymentTime(timeLeft);
 
-          setRemainingPaymentTime(timeLeft);
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          setPaymentCooldown(false);
+          endTimeRef.current = null;
+        }
+      }, 1000);
+    }
 
-          if (timeLeft <= 0) {
-            clearInterval(timer);
-            setPaymentCooldown(false);
-            endTimeRef.current = null;
-          }
-        }, 1000);
-      }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [paymentCooldown]);
 
-      // Cleanup function
-      return () => {
-        if (timer) clearInterval(timer);
-      };
-    }, [paymentCooldown]);
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false);
   };
- 
-
-  const handleLogin = (userData) => {
-    setCurrentUser(userData);
-    setIsLoggedIn(true);
-    handleCloseLoginModal();
-  };
 
   const handleLogout = () => {
-    setCurrentUser(null);
-    setIsLoggedIn(false);
+    dispatch(logout());
     setShowUserDropdown(false);
-  };
-
-  const handleSignUp = (userData) => {
-    setCurrentUser(userData);
-    setIsLoggedIn(true);
-    handleCloseSignUpModal();
+    setPage("home");
   };
   
   // Handle click outside to close dropdown
@@ -128,17 +117,21 @@ const handleOpenPaymentModal = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+    // Thêm effect để kiểm tra trạng thái auth sau khi component mount
+  useEffect(() => {
+    console.log("Auth state:", auth);
+  }, [auth]);
 
   return (
    <div className="bg-sky-100 container mx-auto py-6 px-4 max-w-7xl">
     <div>
-      {/* Login and signUp */}
+      {/* Login button */}
       <div className="flex text-center mb-6 justify-end">
-        {isLoggedIn ? (
+        {isAuthenticated && user?.name ? (
           <div className="flex items-center relative ">
             <div className="flex -gray-700 mr-4 flex items-center flex-col md:flex-row">
-              <span className="font-bold " >Nhân Viên </span>
-              <span className="text-blue-700 font-medium mr-2">{currentUser.name}</span>
+              <span className="font-bold" >{user.role === "ADMIN" ? "Quản lý" : "Nhân Viên"}</span>
+              <span className="text-blue-700 font-medium mr-2">{user.name}</span>
             </div>
             <div className="relative">
               <button
@@ -154,11 +147,11 @@ const handleOpenPaymentModal = () => {
                   <div className="px-4 py-3 border-b border-gray-100">
                     <div className="flex items-center">
                       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 text-xl">
-                        {currentUser.name.charAt(0).toUpperCase()}
+                        {user.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="ml-3">
-                        <p className="font-medium text-gray-800">{currentUser.name}</p>
-                        <p className="text-sm text-gray-500">{currentUser.email}</p>
+                        <p className="font-medium text-gray-800">{user.name}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
                     </div>
                   </div>
@@ -192,12 +185,6 @@ const handleOpenPaymentModal = () => {
               className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200"
             >
               Đăng nhập
-            </button>
-            <button
-              onClick={handleOpenSignUpModal}
-              className="ml-4 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-200"
-            >
-              Đăng ký
             </button>
           </>
         )}
@@ -249,8 +236,15 @@ const handleOpenPaymentModal = () => {
               </div>
             </div>
             
-            {/* Quản lý hoá đơn dành cho quản lý - updated */}
-            <div className="mt-6 flex justify-end">
+            {/* Các nút quản lý cho admin */}
+            <div className="mt-6 flex justify-end space-x-4">
+              <button
+                onClick={() => setPage("staffManagement")}
+                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
+              >
+                <FaUsers className="mr-2" /> Quản lý nhân viên
+              </button>
+              
               <button
                 onClick={() => setPage("orderManagement")}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
@@ -295,33 +289,26 @@ const handleOpenPaymentModal = () => {
       </div>
       
       {/* Modal Components */}
-      <CallStaffModal show={showModal} handleClose={handleCloseModal} />
-      <TableSelectionModal 
-        show={showTableModal}
-        handleClose={handleCloseTableModal}
-        onSelectTable={handleSelectTable}
-      />
-      <LoginForm 
-        show={showLoginModal} 
-        handleClose={handleCloseLoginModal} 
-        handleLogin={handleLogin}
-        handleOpenSignUp={handleOpenSignUpModal}
-      />
-      <SignUpForm 
-        show={showSignUpModal} 
-        handleClose={handleCloseSignUpModal} 
-        handleSignUp={handleSignUp}
-        handleOpenLogin={handleOpenLoginModal}
-      />
-      <PaymentModal 
-        show={showPaymentModal}
-        handleClose={handleClosePaymentModal}
-        remainingTime={remainingPaymentTime}
-      />
-    </>   
-  )}
-  {page === "menu" && <MenuPage onBack={() => setPage("home")} tableInfo={tableInfo} />}
-  {page === "orderManagement" && <OrderManagement onBack={() => setPage("home")} />}
+       <CallStaffModal show={showModal} handleClose={handleCloseModal} />
+        <TableSelectionModal 
+          show={showTableModal}
+          handleClose={handleCloseTableModal}
+          onSelectTable={handleSelectTable}
+        />
+        <LoginForm 
+          show={showLoginModal} 
+          handleClose={handleCloseLoginModal}
+        />
+        <PaymentModal 
+          show={showPaymentModal}
+          handleClose={handleClosePaymentModal}
+          remainingTime={remainingPaymentTime}
+        />
+      </>   
+    )}
+    {page === "menu" && <MenuPage onBack={() => setPage("home")} tableInfo={tableInfo} />}
+    {page === "orderManagement" && <OrderManagement onBack={() => setPage("home")} />}
+    {page === "staffManagement" && <StaffManagement onBack={() => setPage("home")} />}
 </div>
   );
 };
