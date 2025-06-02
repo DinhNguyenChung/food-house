@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { 
   FaArrowLeft, 
   FaSearch, 
@@ -9,25 +10,31 @@ import {
   FaFilter, 
   FaSort, 
   FaCheck, 
-  FaExclamationTriangle 
+  FaExclamationTriangle,
+  FaSpinner
 } from "react-icons/fa";
 import StaffForm from "./StaffForm";
+import { getAllUsers, updateUser, registerUser, resetUpdateSuccess } from "../../redux/slices/authSlice";
 
-// Dữ liệu mẫu nhân viên
-const sampleStaffData = [
-  { id: 1, name: "Nguyễn Văn A", email: "nguyenvana@foodhouse.com", phone: "0901234567", role: "ADMIN", department: "Quản lý", startDate: "2022-01-15", status: "active" },
-  { id: 2, name: "Trần Thị B", email: "tranthib@foodhouse.com", phone: "0912345678", role: "STAFF", department: "Phục vụ", startDate: "2022-02-20", status: "active" },
-  { id: 3, name: "Lê Văn C", email: "levanc@foodhouse.com", phone: "0923456789", role: "STAFF", department: "Bếp", startDate: "2022-03-10", status: "active" },
-  { id: 4, name: "Phạm Thị D", email: "phamthid@foodhouse.com", phone: "0934567890", role: "STAFF", department: "Thu ngân", startDate: "2022-04-05", status: "inactive" },
-  { id: 5, name: "Hoàng Văn E", email: "hoangvane@foodhouse.com", phone: "0945678901", role: "STAFF", department: "Phục vụ", startDate: "2022-05-12", status: "active" },
-  { id: 6, name: "Đỗ Thị F", email: "dothif@foodhouse.com", phone: "0956789012", role: "STAFF", department: "Bếp", startDate: "2022-06-18", status: "active" },
-  { id: 7, name: "Ngô Văn G", email: "ngovang@foodhouse.com", phone: "0967890123", role: "STAFF", department: "Phục vụ", startDate: "2022-07-22", status: "inactive" },
-  { id: 8, name: "Vũ Thị H", email: "vuthih@foodhouse.com", phone: "0978901234", role: "ADMIN", department: "Quản lý", startDate: "2022-08-30", status: "active" },
-];
+// Department mapping for display
+const departmentMap = {
+  SERVER: "Phục vụ",
+  MANAGER: "Quản lý",
+  KITCHEN: "Bếp",
+  CASHIER: "Thu ngân"
+};
+
+// WorkStatus mapping for display
+const statusMap = {
+  WORKING: "active",
+  RESIGNED: "inactive"
+};
 
 const StaffManagement = ({ onBack }) => {
-  const [staffList, setStaffList] = useState(sampleStaffData);
-  const [filteredStaff, setFilteredStaff] = useState(staffList);
+  const dispatch = useDispatch();
+  const { users, loading, error, updateSuccess } = useSelector(state => state.auth);
+  
+  const [filteredStaff, setFilteredStaff] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -39,9 +46,54 @@ const StaffManagement = ({ onBack }) => {
   const [staffToDelete, setStaffToDelete] = useState(null);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
 
+  // Fetch users when component mounts
+  useEffect(() => {
+    dispatch(getAllUsers());
+  }, [dispatch]);
+
+  // Show notification when update is successful
+  useEffect(() => {
+    if (updateSuccess) {
+      showNotification(
+        currentStaff ? "Cập nhật thông tin nhân viên thành công!" : "Thêm nhân viên mới thành công!", 
+        "success"
+      );
+      setShowStaffForm(false);
+      setCurrentStaff(null);
+      dispatch(resetUpdateSuccess());
+    }
+  }, [updateSuccess, currentStaff, dispatch]);
+
+  // Show error notification if there's an error
+  useEffect(() => {
+    if (error) {
+      showNotification(error, "error");
+    }
+  }, [error]);
+
+  // Transform API data for display
+    const transformedUsers = useMemo(() => {
+        return users.map(user => ({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          department: departmentMap[user.department] || user.department,
+          status: statusMap[user.workStatus] || "inactive",
+          startDate: user.startDate,
+          endDate: user.endDate,
+          // Store original values for API updates
+          _original: {
+            department: user.department,
+            workStatus: user.workStatus
+          }
+        }));
+  }, [users]);
+
   // Filter and sort staff when any filter/sort parameter changes
   useEffect(() => {
-    let result = [...staffList];
+    let result = [...transformedUsers];
     
     // Apply search filter
     if (searchTerm) {
@@ -82,7 +134,7 @@ const StaffManagement = ({ onBack }) => {
     });
     
     setFilteredStaff(result);
-  }, [staffList, searchTerm, filterRole, filterStatus, sortField, sortDirection]);
+  }, [transformedUsers, searchTerm, filterRole, filterStatus, sortField, sortDirection]);
 
   // Handle search
   const handleSearch = (e) => {
@@ -119,28 +171,68 @@ const StaffManagement = ({ onBack }) => {
     setCurrentStaff(null);
   };
 
-  const handleSaveStaff = (staffData) => {
-    if (currentStaff) {
-      // Update existing staff
-      setStaffList(prevStaff => 
-        prevStaff.map(staff => 
-          staff.id === currentStaff.id ? { ...staffData, id: staff.id } : staff
-        )
-      );
-      showNotification("Cập nhật thông tin nhân viên thành công!", "success");
-    } else {
-      // Add new staff
-      const newStaff = {
-        ...staffData,
-        id: staffList.length > 0 ? Math.max(...staffList.map(s => s.id)) + 1 : 1
-      };
-      setStaffList(prevStaff => [...prevStaff, newStaff]);
-      showNotification("Thêm nhân viên mới thành công!", "success");
-    }
-    
-    setShowStaffForm(false);
-    setCurrentStaff(null);
+  // Convert UI data to API format
+  const formatDateTime = (dateString) => {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  // Lấy ISO format và bỏ phần milliseconds + timezone
+  return date.toISOString().split(".")[0]; // "2025-06-02T00:00:00"
+};
+
+const convertToApiFormat = (staffData) => {
+  const departmentKey = Object.entries(departmentMap)
+    .find(([, value]) => value === staffData.department)?.[0] || staffData.department;
+  
+  const workStatus = staffData.status === "active" ? "WORKING" : "RESIGNED";
+
+  return {
+    name: staffData.name,
+    email: staffData.email,
+    phone: staffData.phone,
+    role: staffData.role,
+    department: departmentKey,
+    workStatus: workStatus,
+    password: staffData.password, // Optional
+    startDate: formatDateTime(staffData.startDate),
+    endDate: formatDateTime(staffData.endDate)
   };
+};
+
+
+const handleSaveStaff = (staffData) => {
+  const apiData = convertToApiFormat(staffData);
+  console.log("API Data to save:", apiData);
+  
+  if (currentStaff) {
+    console.log("Updating staff with ID:", currentStaff.id);
+    dispatch(updateUser({
+      id: currentStaff.id,
+      userData: apiData
+    }))
+    .unwrap()
+    .then(result => {
+      console.log("Update success:", result);
+      // Form will be closed by the useEffect that watches updateSuccess
+    })
+    .catch(err => {
+      console.error("Update error:", err);
+    });
+  } else {
+    console.log("Registering new staff");
+    dispatch(registerUser(apiData))
+    .unwrap()
+    .then(result => {
+      console.log("Register success:", result);
+      // Form will be closed by the useEffect that watches updateSuccess
+       setShowStaffForm(false);
+        setCurrentStaff(null);
+        dispatch(getAllUsers()); // Refresh data
+    })
+    .catch(err => {
+      console.error("Register error:", err);
+    });
+  }
+};
 
   // Handle delete staff
   const handleDeleteClick = (staff) => {
@@ -149,10 +241,9 @@ const StaffManagement = ({ onBack }) => {
   };
 
   const handleConfirmDelete = () => {
-    setStaffList(prevStaff => prevStaff.filter(staff => staff.id !== staffToDelete.id));
+    showNotification("API for delete is not implemented yet.", "error");
     setShowDeleteConfirm(false);
     setStaffToDelete(null);
-    showNotification("Đã xóa nhân viên thành công!", "success");
   };
 
   const handleCancelDelete = () => {
@@ -167,6 +258,12 @@ const StaffManagement = ({ onBack }) => {
       setNotification({ show: false, message: "", type: "" });
     }, 3000);
   };
+useEffect(() => {
+  if (updateSuccess) {
+    // Refresh the data after a successful update or registration
+    dispatch(getAllUsers());
+  }
+}, [updateSuccess, dispatch]);
 
   return (
     <div className="container mx-auto py-6 max-w-7xl">
@@ -250,149 +347,160 @@ const StaffManagement = ({ onBack }) => {
         </div>
       </div>
 
+      {/* Loading indicator */}
+      {loading && (
+        <div className="flex justify-center my-8">
+          <FaSpinner className="animate-spin text-purple-600 text-3xl" />
+        </div>
+      )}
+
       {/* Staff table */}
-      <div className="bg-white shadow-md rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort("name")}
-                >
-                  <div className="flex items-center">
-                    Họ tên
-                    {sortField === "name" && (
-                      <span className="ml-1">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort("email")}
-                >
-                  <div className="flex items-center">
-                    Email
-                    {sortField === "email" && (
-                      <span className="ml-1">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Số điện thoại
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort("role")}
-                >
-                  <div className="flex items-center">
-                    Vai trò
-                    {sortField === "role" && (
-                      <span className="ml-1">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort("department")}
-                >
-                  <div className="flex items-center">
-                    Bộ phận
-                    {sortField === "department" && (
-                      <span className="ml-1">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort("status")}
-                >
-                  <div className="flex items-center">
-                    Trạng thái
-                    {sortField === "status" && (
-                      <span className="ml-1">
-                        {sortDirection === "asc" ? "↑" : "↓"}
-                      </span>
-                    )}
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStaff.length > 0 ? (
-                filteredStaff.map((staff) => (
-                  <tr key={staff.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
-                          {staff.name.charAt(0).toUpperCase()}
+      {!loading && (
+        <div className="bg-white shadow-md rounded-lg overflow-hidden">
+          <div className="overflow-x-auto">
+             <div className="max-h-[50vh] overflow-y-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort("name")}
+                  >
+                    <div className="flex items-center">
+                      Họ tên
+                      {sortField === "name" && (
+                        <span className="ml-1">
+                          {sortDirection === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort("email")}
+                  >
+                    <div className="flex items-center">
+                      Email
+                      {sortField === "email" && (
+                        <span className="ml-1">
+                          {sortDirection === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Số điện thoại
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort("role")}
+                  >
+                    <div className="flex items-center">
+                      Vai trò
+                      {sortField === "role" && (
+                        <span className="ml-1">
+                          {sortDirection === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort("department")}
+                  >
+                    <div className="flex items-center">
+                      Bộ phận
+                      {sortField === "department" && (
+                        <span className="ml-1">
+                          {sortDirection === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort("status")}
+                  >
+                    <div className="flex items-center">
+                      Trạng thái
+                      {sortField === "status" && (
+                        <span className="ml-1">
+                          {sortDirection === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Thao tác
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredStaff.length > 0 ? (
+                  filteredStaff.map((staff) => (
+                    <tr key={staff.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+                            {staff.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">{staff.name}</div>
+                          </div>
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{staff.name}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{staff.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{staff.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        staff.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {staff.role === 'ADMIN' ? 'Admin' : 'Nhân viên'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{staff.department}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        staff.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {staff.status === 'active' ? 'Đang làm việc' : 'Đã nghỉ việc'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleEditStaff(staff)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-3"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(staff)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <FaTrash />
-                      </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{staff.email}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{staff.phone}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          staff.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {staff.role === 'ADMIN' ? 'Admin' : 'Nhân viên'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{staff.department}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          staff.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {staff.status === 'active' ? 'Đang làm việc' : 'Đã nghỉ việc'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => handleEditStaff(staff)}
+                          className="text-indigo-600 hover:text-indigo-900 mr-3"
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(staff)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                      Không tìm thấy nhân viên phù hợp với tiêu chí tìm kiếm
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
-                    Không tìm thấy nhân viên phù hợp với tiêu chí tìm kiếm
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+              </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Staff Form Modal */}
       {showStaffForm && (
@@ -400,6 +508,7 @@ const StaffManagement = ({ onBack }) => {
           staff={currentStaff}
           onClose={handleCloseStaffForm}
           onSave={handleSaveStaff}
+          departments={Object.values(departmentMap)}
         />
       )}
 

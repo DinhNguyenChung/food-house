@@ -14,27 +14,15 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class UserRegistrationDTO {
-    @NotBlank(message = "Tên không được để trống")
+public class UpdateUserDTO {
     private String name;
-
-    @NotBlank(message = "Email không được để trống")
-    @Email(message = "Email không hợp lệ")
     private String email;
-
-    @NotBlank(message = "Mật khẩu không được để trống")
-    @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
-    private String password;
-
-    @NotBlank(message = "Số điện thoại không được để trống")
+    private String password;  // không cần @NotBlank
     private String phone;
-
     private DepartmentStatus department;
     private WorkStatus workStatus;
     private RoleStatus role;
-
     private LocalDateTime startDate;
     private LocalDateTime endDate;
-
 
 }

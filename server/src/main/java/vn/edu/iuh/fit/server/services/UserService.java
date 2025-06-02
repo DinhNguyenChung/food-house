@@ -1,18 +1,17 @@
 package vn.edu.iuh.fit.server.services;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import vn.edu.iuh.fit.server.dto.UserChangePasswordDTO;
+import vn.edu.iuh.fit.server.config.JwtTokenUtil;
+import vn.edu.iuh.fit.server.dto.*;
 import vn.edu.iuh.fit.server.entities.User;
 import vn.edu.iuh.fit.server.enums.DepartmentStatus;
 import vn.edu.iuh.fit.server.enums.RoleStatus;
 import vn.edu.iuh.fit.server.enums.WorkStatus;
 import vn.edu.iuh.fit.server.repositories.UserRepository;
-import vn.edu.iuh.fit.server.dto.UserRegistrationDTO;
-import vn.edu.iuh.fit.server.dto.UserLoginDTO;
-import vn.edu.iuh.fit.server.dto.UserResponseDTO;
-    import vn.edu.iuh.fit.server.exceptions.UserAlreadyExistsException;
+import vn.edu.iuh.fit.server.exceptions.UserAlreadyExistsException;
 import vn.edu.iuh.fit.server.exceptions.InvalidCredentialsException;
 
 import java.time.LocalDateTime;
@@ -23,11 +22,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenUtil jwtTokenUtil;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenUtil jwtTokenUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtTokenUtil = jwtTokenUtil;
     }
 
     public UserResponseDTO registerUser(UserRegistrationDTO dto) {
@@ -48,14 +49,14 @@ public class UserService {
         user.setRole(dto.getRole() != null ? dto.getRole() : RoleStatus.STAFF);
 
         user.setStartDate(dto.getStartDate() != null ? dto.getStartDate() : LocalDateTime.now());
-        user.setEndDate(dto.getEndDate()); // optional
+//        user.setEndDate(dto.getEndDate()); // optional
 
         // Lưu vào DB
         User saved = userRepository.save(user);
         return convertToDTO(saved);
     }
 
-    public UserResponseDTO loginUser(UserLoginDTO loginDTO) {
+    public LoginResponseDTO loginUser(UserLoginDTO loginDTO) {
         // Tìm user theo email
         User user = userRepository.findByEmail(loginDTO.getEmail())
                 .orElseThrow(() -> new InvalidCredentialsException("Email hoặc mật khẩu không đúng"));
@@ -65,7 +66,16 @@ public class UserService {
             throw new InvalidCredentialsException("Email hoặc mật khẩu không đúng");
         }
 
-        return convertToDTO(user);
+        // Tạo JWT token
+        String token = jwtTokenUtil.generateToken(user.getEmail());
+
+        // Chuẩn bị response
+        UserResponseDTO userDTO = convertToDTO(user);
+        LoginResponseDTO response = new LoginResponseDTO();
+        response.setToken(token);
+        response.setUser(userDTO);
+
+        return response;
     }
     public List<UserResponseDTO> getAllUsers() {
         List<User> users = userRepository.findAll();
@@ -82,6 +92,26 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
         userRepository.save(user);
+    }
+    public UserResponseDTO updateUser(Long id, UpdateUserDTO dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy người dùng"));
+
+        user.setName(dto.getName());
+        user.setPhone(dto.getPhone());
+
+        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword().trim()));
+        }
+
+        if (dto.getDepartment() != null) user.setDepartment(dto.getDepartment());
+        if (dto.getWorkStatus() != null) user.setWork(dto.getWorkStatus());
+        if (dto.getRole() != null) user.setRole(dto.getRole());
+        if (dto.getStartDate() != null) user.setStartDate(dto.getStartDate());
+        if (dto.getEndDate() != null) user.setEndDate(dto.getEndDate());
+
+        User saved = userRepository.save(user);
+        return convertToDTO(saved);
     }
 
 

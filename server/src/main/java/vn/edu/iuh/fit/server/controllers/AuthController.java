@@ -1,14 +1,12 @@
 package vn.edu.iuh.fit.server.controllers;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import vn.edu.iuh.fit.server.dto.UserChangePasswordDTO;
-import vn.edu.iuh.fit.server.dto.UserLoginDTO;
-import vn.edu.iuh.fit.server.dto.UserRegistrationDTO;
-import vn.edu.iuh.fit.server.dto.UserResponseDTO;
+import vn.edu.iuh.fit.server.dto.*;
 import vn.edu.iuh.fit.server.exceptions.InvalidCredentialsException;
 import vn.edu.iuh.fit.server.exceptions.UserAlreadyExistsException;
 import vn.edu.iuh.fit.server.services.UserService;
@@ -40,7 +38,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@Valid @RequestBody UserLoginDTO loginDTO) {
         try {
-            UserResponseDTO userResponse = userService.loginUser(loginDTO);
+            LoginResponseDTO userResponse = userService.loginUser(loginDTO);
             return ResponseEntity.ok(userResponse);
         } catch (InvalidCredentialsException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
@@ -68,5 +66,17 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi đổi mật khẩu: " + e.getMessage());
         }
     }
+    @PutMapping("/users/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserDTO registrationDTO) {
+        try {
+            UserResponseDTO updatedUser = userService.updateUser(id, registrationDTO);
+            return ResponseEntity.ok(updatedUser);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy người dùng với id: " + id);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi cập nhật: " + e.getMessage());
+        }
+    }
+
 
 }

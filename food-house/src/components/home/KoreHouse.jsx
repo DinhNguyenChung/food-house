@@ -22,6 +22,8 @@ import logo from "../pics/logo-food-house.png";
 import PaymentModal from "../payment/PaymentModal";
 import OrderManagement from "../orders/OrderManagement";
 import StaffManagement from "../staff-management/StaffManagement"; // Thêm import cho component mới
+import ProfileModal from "../auth/ProfileModal";
+import { useAuth } from '../../hooks/useAuth';
 
 const KoreHouse = () => {
  const [page, setPage] = useState("home");
@@ -31,14 +33,19 @@ const KoreHouse = () => {
   
   // Get auth state from Redux
   const auth = useSelector(state => state.auth);
-  const isAuthenticated = auth?.isAuthenticated && auth?.user;
-  const user = auth?.user || {};
+  const isAuthenticated = auth?.isAuthenticated && auth?.user.user;
+  const user = auth?.user?.user || {};
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showProfileModalUser, setShowProfileModalUser] = useState(false);
   
   const dispatch = useDispatch();
   const userDropdownRef = useRef(null);
-
+  //Kiểm tra xem là admin hay không
+  const { isAdmin } = useAuth();
+  // Kiểm tra xem có phải là nhân viên có là quản lý hay không
+   const isManager = user?.role === "STAFF" && user?.department === "MANAGER";
+  
   // Modal handlers
   const handleOpenModal = () => setShowModal(true);
   const handleCloseModal = () => setShowModal(false);
@@ -48,6 +55,15 @@ const KoreHouse = () => {
   
   const handleSelectTable = (info) => {
     setTableInfo(info);
+  };
+  // Profile modal handlers User
+   const handleOpenProfileModal = () => {
+    setShowProfileModalUser(true);
+    setShowUserDropdown(false); // Close dropdown when modal opens
+  };
+  
+  const handleCloseProfileModalUser = () => {
+    setShowProfileModalUser(false);
   };
   
   // Auth handlers
@@ -130,7 +146,7 @@ const KoreHouse = () => {
         {isAuthenticated && user?.name ? (
           <div className="flex items-center relative ">
             <div className="flex -gray-700 mr-4 flex items-center flex-col md:flex-row">
-              <span className="font-bold" >{user.role === "ADMIN" ? "Quản lý" : "Nhân Viên"}</span>
+              <span className="font-bold" >{user.role === "ADMIN" ? "QUẢN LÝ" : "NHÂN VIÊN"}</span>
               <span className="text-blue-700 font-medium mr-2">{user.name}</span>
             </div>
             <div className="relative">
@@ -155,12 +171,15 @@ const KoreHouse = () => {
                       </div>
                     </div>
                   </div>
-                  <a href="#profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
+                  <button 
+                    onClick={handleOpenProfileModal}
+                    className="w-full text-left block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  >
                     <div className="flex items-center">
                       <FaUserAlt className="mr-3 text-gray-500" />
                       <span>Thông tin tài khoản</span>
                     </div>
-                  </a>
+                  </button>
                   <a href="#settings" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">
                     <div className="flex items-center">
                       <FaCog className="mr-3 text-gray-500" />
@@ -238,19 +257,23 @@ const KoreHouse = () => {
             
             {/* Các nút quản lý cho admin */}
             <div className="mt-6 flex justify-end space-x-4">
-              <button
-                onClick={() => setPage("staffManagement")}
-                className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
-              >
-                <FaUsers className="mr-2" /> Quản lý nhân viên
-              </button>
-              
-              <button
-                onClick={() => setPage("orderManagement")}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
-              >
-                <FaFileInvoiceDollar className="mr-2" /> Quản lý hóa đơn
-              </button>
+               {isAdmin && (
+                  <button
+                    onClick={() => setPage("staffManagement")}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
+                  >
+                    <FaUsers className="mr-2" /> Quản lý nhân viên
+                  </button>
+                )}
+                
+                {(isAdmin || isManager) && (
+                  <button
+                    onClick={() => setPage("orderManagement")}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
+                  >
+                    <FaFileInvoiceDollar className="mr-2" /> Quản lý hóa đơn
+                  </button>
+                )}
             </div>
           </div>
      </div>
@@ -304,6 +327,11 @@ const KoreHouse = () => {
           handleClose={handleClosePaymentModal}
           remainingTime={remainingPaymentTime}
         />
+        <ProfileModal 
+          show={showProfileModalUser} 
+          handleClose={handleCloseProfileModalUser} 
+          user={user}
+          />
       </>   
     )}
     {page === "menu" && <MenuPage onBack={() => setPage("home")} tableInfo={tableInfo} />}
