@@ -1,63 +1,106 @@
-import React, { useState } from "react";
-import { FaTimes, FaPrint, FaCreditCard, FaMoneyBill } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { FaTimes, FaPrint, FaCreditCard, FaMoneyBill, FaSpinner } from "react-icons/fa";
+import { getOrderById, updateOrderStatus } from "../../redux/slices/orderSlice";
 
-// Sample order items data
-const sampleOrderItems = [
-  { id: 1, name: "Gà rán sốt cay", price: 85000, quantity: 2, discount: 0, totalPrice: 170000 },
-  { id: 2, name: "Kimbap truyền thống", price: 55000, quantity: 1, discount: 10, totalPrice: 49500 },
-  { id: 3, name: "Tokbokki phô mai", price: 65000, quantity: 2, discount: 0, totalPrice: 130000 },
-];
-
-const OrderDetail = ({ table, onClose, onPayment }) => {
+const OrderDetail = ({ table, orderId, onClose, onPayment }) => {
+  const dispatch = useDispatch();
+  const { selectedOrder, loading } = useSelector(state => state.order);  
   const [paymentMethod, setPaymentMethod] = useState("cash");
-  const [items] = useState(sampleOrderItems);
-  const [tipAmount, setTipAmount] = useState(0);
   const [discountPercent, setDiscountPercent] = useState(0);
-
-  // Calculate subtotal
-  const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0);
+  const [tipAmount, setTipAmount] = useState(0);
+  const [processingPayment, setProcessingPayment] = useState(false);
   
-  // Calculate discount amount
-  const discountAmount = (subtotal * discountPercent) / 100;
+  // Lấy chi tiết đơn hàng
+  useEffect(() => {
+    if (orderId) {
+      dispatch(getOrderById(orderId));
+    }
+  }, [dispatch, orderId]);
   
-  // Calculate total with tip and discount
-  const total = subtotal - discountAmount + tipAmount;
-
   const handleDiscountChange = (e) => {
-    const value = parseInt(e.target.value) || 0;
-    setDiscountPercent(Math.min(100, Math.max(0, value)));
+    const value = parseInt(e.target.value);
+    setDiscountPercent(isNaN(value) ? 0 : Math.min(100, Math.max(0, value)));
   };
-
+  
   const handleTipChange = (e) => {
-    const value = parseInt(e.target.value) || 0;
-    setTipAmount(Math.max(0, value));
+    const value = parseInt(e.target.value);
+    setTipAmount(isNaN(value) ? 0 : Math.max(0, value));
   };
-
+  
+  // Tính toán
+  const subtotal = selectedOrder?.totalAmount || 0;
+  const discountAmount = (subtotal * discountPercent) / 100;
+  const total = subtotal - discountAmount + tipAmount;
+  
   const handlePayment = () => {
-    onPayment(table.id);
+    setProcessingPayment(true);
+    
+    const statusData = {
+      status: "COMPLETED",
+      paymentMethod: paymentMethod,
+      discountPercent: discountPercent,
+      tipAmount: tipAmount
+    };
+    
+    dispatch(updateOrderStatus({ id: orderId, statusData }))
+      .unwrap()
+      .then(() => {
+        onPayment(table.id);
+      })
+      .catch((err) => {
+        console.error("Thanh toán thất bại:", err);
+        setProcessingPayment(false);
+      });
   };
-
-  if (!table) return null;
+  
+  if (!selectedOrder && loading) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-xl">
+          <FaSpinner className="animate-spin text-blue-500 text-3xl mx-auto" />
+          <p className="text-center mt-4">Đang tải thông tin đơn hàng...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!selectedOrder && !loading) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-xl">
+          <p className="text-center text-red-500">Không thể tải thông tin đơn hàng. Vui lòng thử lại.</p>
+          <button
+            onClick={onClose}
+            className="mt-4 w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center">
       <div className="relative bg-white w-full max-w-3xl rounded-lg shadow-xl">
         <div className="p-6 border-b border-gray-200">
           <button 
             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
             onClick={onClose}
+            disabled={processingPayment}
           >
             <FaTimes className="text-xl" />
           </button>
           
           <h2 className="text-2xl font-bold">
-            Chi tiết hóa đơn - Bàn {table.id}
+            Chi tiết hóa đơn - Bàn {selectedOrder.tableId}
           </h2>
           <div className="mt-2 text-gray-600">
-            {table.customerName && (
-              <p>Khách hàng: <span className="font-medium">{table.customerName}</span></p>
+            {selectedOrder.customerName && (
+              <p>Khách hàng: <span className="font-medium">{selectedOrder.customerName}</span></p>
             )}
-            <p>Thời gian: <span className="font-medium">{table.timeElapsed}</span></p>
+            <p>Thời gian: <span className="font-medium">{new Date(selectedOrder.createdAt).toLocaleString()}</span></p>
           </div>
         </div>
         
@@ -86,10 +129,10 @@ const OrderDetail = ({ table, onClose, onPayment }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {items.map((item) => (
+                  {selectedOrder.items && selectedOrder.items.map((item) => (
                     <tr key={item.id}>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{item.name}</div>
+                        <div className="font-medium text-gray-900">{item.menuItemName}</div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="text-gray-500">{item.price.toLocaleString()}đ</div>
@@ -98,7 +141,7 @@ const OrderDetail = ({ table, onClose, onPayment }) => {
                         <div className="text-gray-500">{item.quantity}</div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="text-gray-500">{item.discount}%</div>
+                        <div className="text-gray-500">{item.discount || 0}%</div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
                         <div className="font-medium text-gray-900">{item.totalPrice.toLocaleString()}đ</div>
@@ -168,8 +211,8 @@ const OrderDetail = ({ table, onClose, onPayment }) => {
                 </div>
               </div>
             </div>
-          </div>
-           <div>
+            
+            <div>
               <h3 className="font-bold text-lg mb-3">Tổng cộng</h3>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="space-y-2">
@@ -197,23 +240,36 @@ const OrderDetail = ({ table, onClose, onPayment }) => {
                   </div>
                 </div>
               </div>
-              
-              
             </div>
+          </div>
         </div>
-        <div className="mt-6 space-y-3">
-                <button
-                  onClick={handlePayment}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center"
-                >
+        
+        <div className="p-6 border-t border-gray-200">
+          <div className="mt-6 space-y-3">
+            <button
+              onClick={handlePayment}
+              disabled={processingPayment}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center"
+            >
+              {processingPayment ? (
+                <>
+                  <FaSpinner className="animate-spin mr-2" />
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
                   <FaCreditCard className="mr-2" /> Thanh toán
-                </button>
-                <button
-                  onClick={() => {}}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg flex items-center justify-center"
-                >
-                  <FaPrint className="mr-2" /> In hóa đơn
-                </button>
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => {}}
+              disabled={processingPayment}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-lg flex items-center justify-center"
+            >
+              <FaPrint className="mr-2" /> In hóa đơn
+            </button>
+          </div>
         </div>
       </div>
     </div>

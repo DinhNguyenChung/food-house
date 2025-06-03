@@ -1,14 +1,75 @@
 import React, { useState } from "react";
-import { FaShoppingCart, FaTrash, FaRegSadTear } from "react-icons/fa";
+import { useDispatch, useSelector } from "react-redux";
+import { FaShoppingCart, FaTrash, FaRegSadTear, FaSpinner } from "react-icons/fa";
+import { createOrder } from "../../../redux/slices/orderSlice";
 
-const CartSummary = ({ cart, tableInfo, removeFromCart, placeOrder }) => {
+const CartSummary = ({ cart, tableInfo, removeFromCart, placeOrder, clearCart }) => {
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector(state => state.order);
+  const auth = useSelector(state => state.auth);
+  const user = auth?.user?.user || {};
+  
   const [showCart, setShowCart] = useState(false);
+  const [orderPlaced, setOrderPlaced] = useState(false);
 
   // Tính tổng số tiền
   const totalAmount = cart.reduce((total, item) => total + item.totalItemPrice, 0);
   
   // Tính tổng số món
   const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+
+  const handlePlaceOrder = () => {
+    // Kiểm tra nếu giỏ hàng trống
+    if (cart.length === 0) {
+      placeOrder(); // Gọi hàm thông báo giỏ hàng trống
+      return;
+    }
+
+    // Kiểm tra nếu chưa chọn bàn
+    if (!tableInfo || !tableInfo.tableId) {
+      placeOrder(); // Gọi hàm thông báo chưa chọn bàn
+      return;
+    }
+    
+    // Kiểm tra nếu chưa đăng nhập
+    if (!user.id) {
+      placeOrder(); // Gọi hàm thông báo cần đăng nhập
+      return;
+    }
+    
+    // Tạo dữ liệu đơn hàng
+    const orderData = {
+      tableId: tableInfo.tableId,
+      customerName: tableInfo.customerName,
+      staffId: user.id, // Lấy ID từ người dùng đăng nhập
+      items: cart.map(item => ({
+        menuItemId: item.id,
+        quantity: item.quantity,
+        discount: item.discount || 0,
+        note: item.note || ""
+      }))
+    };
+    
+    // Gửi yêu cầu tạo đơn hàng
+    dispatch(createOrder(orderData))
+      .unwrap()
+      .then(() => {
+        setOrderPlaced(true);
+        // Hiển thị thông báo thành công
+        placeOrder();
+        // Xóa giỏ hàng
+        clearCart();
+        // Đóng cart
+        setTimeout(() => {
+          setShowCart(false);
+          setOrderPlaced(false);
+        }, 1500);
+      })
+      .catch((err) => {
+        // Xử lý lỗi nếu có
+        console.error("Đặt món thất bại:", err);
+      });
+  };
 
   return (
     <div className="relative">
@@ -70,6 +131,7 @@ const CartSummary = ({ cart, tableInfo, removeFromCart, placeOrder }) => {
                       <button 
                         className="ml-2 text-red-500 hover:text-red-700"
                         onClick={() => removeFromCart(index)}
+                        disabled={loading}
                       >
                         <FaTrash />
                       </button>
@@ -87,12 +149,28 @@ const CartSummary = ({ cart, tableInfo, removeFromCart, placeOrder }) => {
                 <span>Tổng cộng:</span>
                 <span className="text-blue-600">{totalAmount.toLocaleString()}đ</span>
               </div>
+              
+              {error && (
+                <div className="mb-4 p-2 bg-red-100 text-red-700 rounded-lg text-sm">
+                  {typeof error === "string" ? error : "Lỗi khi đặt món. Vui lòng thử lại."}
+                </div>
+              )}
+              
               <button
-                onClick={placeOrder}
-                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg"
-                disabled={!tableInfo.tableId}
+                onClick={handlePlaceOrder}
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center"
+                disabled={!tableInfo.tableId || loading}
               >
-                {tableInfo.tableId ? "Đặt món" : "Vui lòng chọn bàn trước"}
+                {loading ? (
+                  <>
+                    <FaSpinner className="animate-spin mr-2" />
+                    Đang xử lý...
+                  </>
+                ) : tableInfo.tableId ? (
+                  orderPlaced ? "Đặt món thành công!" : "Đặt món"
+                ) : (
+                  "Vui lòng chọn bàn trước"
+                )}
               </button>
             </div>
           )}

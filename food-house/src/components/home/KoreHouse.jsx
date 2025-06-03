@@ -199,12 +199,13 @@ const KoreHouse = () => {
           </div>
         ) : (
           <>
-            <button
-              onClick={handleOpenLoginModal}
-              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200"
-            >
-              Đăng nhập
-            </button>
+          <button
+            onClick={handleOpenLoginModal}
+            className="bg-blue-500 text-white text-sm px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-200 flex items-center justify-center max-w-xs text-center whitespace-normal break-words"
+          >
+            <FaUserAlt className="mr-2 shrink-0" />
+            Đăng Nhập
+          </button>
           </>
         )}
       </div>
@@ -221,7 +222,7 @@ const KoreHouse = () => {
         />
 
        {/* Logo ở giữa ảnh, nổi lên trên */}
-        <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 self-center">
+        <div className="absolute left-1/2 top-[150px] transform -translate-x-1/2 self-center">
           <img
             src={logo}
             alt="Food House Logo"

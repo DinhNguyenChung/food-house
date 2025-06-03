@@ -1,138 +1,127 @@
-import React, { useState, useEffect } from "react";
-import { FaTimes, FaMinus, FaPlus } from "react-icons/fa";
+import React, { useState } from "react";
+import { FaPlus, FaMinus, FaTimes } from "react-icons/fa";
 
 const ProductQuantityModal = ({ show, handleClose, item, addToCart }) => {
   const [quantity, setQuantity] = useState(1);
-  const [discount, setDiscount] = useState(0);
   const [note, setNote] = useState("");
-  const [totalPrice, setTotalPrice] = useState(item?.price || 0);
-
-  useEffect(() => {
-    if (item) {
-      const discountAmount = (item.price * quantity * discount) / 100;
-      setTotalPrice(item.price * quantity - discountAmount);
-    }
-  }, [item, quantity, discount]);
-
-  const handleIncrease = () => {
-    setQuantity(prev => prev + 1);
-  };
-
-  const handleDecrease = () => {
-    if (quantity > 1) {
-      setQuantity(prev => prev - 1);
-    }
-  };
-
-  const handleDiscountChange = (e) => {
-    const value = parseInt(e.target.value) || 0;
-    setDiscount(Math.min(100, Math.max(0, value)));
-  };
-
-  const handleSubmit = () => {
-    const finalPrice = totalPrice;
-    addToCart({
-      ...item,
-      quantity,
-      discount,
-      note,
-      finalPrice,
-      totalItemPrice: finalPrice
-    });
-    handleClose();
-    setQuantity(1);
-    setDiscount(0);
-    setNote("");
-  };
 
   if (!show || !item) return null;
 
+  const decreaseQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
+
+  const increaseQuantity = () => {
+    setQuantity(quantity + 1);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const totalItemPrice = item.price * quantity;
+    addToCart({
+      ...item,
+      quantity,
+      note,
+      totalItemPrice
+    });
+    handleClose();
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setQuantity(1);
+    setNote("");
+  };
+
   return (
-    <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="relative bg-white w-full max-w-md mx-auto rounded-lg shadow-lg p-6">
-        <button 
-          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
-          onClick={handleClose}
-        >
-          <FaTimes />
-        </button>
-        
-        <h3 className="text-xl font-bold mb-4">{item.name}</h3>
-        <div className="flex justify-between items-center mb-6">
-          <span className="text-gray-600">Đơn giá: {item.price.toLocaleString()}đ</span>
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        {/* Header */}
+        <div className="flex justify-between items-center p-6 border-b">
+          <h2 className="text-xl font-bold text-gray-800">{item.name}</h2>
+          <button 
+            onClick={() => {
+              handleClose();
+              resetForm();
+            }}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            <FaTimes size={20} />
+          </button>
         </div>
         
-        {/* Số lượng */}
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Số lượng:
-          </label>
-          <div className="flex items-center border rounded-md">
-            <button 
-              onClick={handleDecrease}
-              className="px-3 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-l-md"
-            >
-              <FaMinus />
-            </button>
-            <span className="flex-1 text-center py-2">{quantity}</span>
-            <button 
-              onClick={handleIncrease}
-              className="px-3 py-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-r-md"
-            >
-              <FaPlus />
-            </button>
-          </div>
-        </div>
-        
-        {/* Giảm giá */}
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Giảm giá (%):
-          </label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={discount}
-            onChange={handleDiscountChange}
-            className="w-full p-2 border rounded-md"
-          />
-        </div>
-        
-        {/* Ghi chú */}
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Ghi chú:
-          </label>
-          <textarea
-            rows="2"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            className="w-full p-2 border rounded-md"
-            placeholder="Ví dụ: Ít cay, nhiều rau..."
-          />
-        </div>
-        
-        {/* Thành tiền */}
-        <div className="bg-blue-50 p-3 rounded-md mb-4">
-          <div className="flex justify-between items-center">
-            <span className="font-bold">Thành tiền:</span>
-            <span className="text-xl font-bold text-blue-600">{totalPrice.toLocaleString()}đ</span>
-          </div>
-          {discount > 0 && (
-            <div className="flex justify-between items-center text-sm mt-1">
-              <span className="text-gray-500">Đã giảm:</span>
-              <span className="text-red-500">-{(item.price * quantity * discount / 100).toLocaleString()}đ</span>
+        {/* Content */}
+        <form onSubmit={handleSubmit}>
+          <div className="p-6">
+            <div className="flex mb-6">
+              <img 
+                src={item.image} 
+                alt={item.name} 
+                className="w-24 h-24 object-cover rounded-lg" 
+              />
+              <div className="ml-4 flex-1">
+                <p className="text-accent font-bold text-xl mb-1">
+                  {item.price.toLocaleString()}đ
+                </p>
+                <p className="text-sm text-gray-600">
+                  {item.description}
+                </p>
+              </div>
             </div>
-          )}
-        </div>
-        
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg"
-        >
-          Thêm vào giỏ hàng
-        </button>
+            
+            <div className="mb-6">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Số lượng
+              </label>
+              <div className="flex items-center">
+                <button 
+                  type="button"
+                  onClick={decreaseQuantity}
+                  className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center"
+                >
+                  <FaMinus />
+                </button>
+                <span className="mx-4 font-bold text-lg w-8 text-center">{quantity}</span>
+                <button 
+                  type="button"
+                  onClick={increaseQuantity}
+                  className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center"
+                >
+                  <FaPlus />
+                </button>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Ghi chú
+              </label>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg h-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Yêu cầu đặc biệt, ví dụ: ít cay, không hành..."
+              ></textarea>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm text-gray-700">Tổng cộng:</p>
+                <p className="text-xl font-bold text-accent">
+                  {(item.price * quantity).toLocaleString()}đ
+                </p>
+              </div>
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg"
+              >
+                Thêm vào giỏ
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
     </div>
   );
