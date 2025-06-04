@@ -11,7 +11,8 @@ import {
   FaSignOutAlt,
   FaCog,
   FaFileInvoiceDollar,
-  FaUsers
+  FaUsers,
+  FaTable
 } from "react-icons/fa";
 import CallStaffModal from "../staff/CallStaffModal";
 import MenuPage from "../Menu/MenuPage";
@@ -24,6 +25,7 @@ import OrderManagement from "../orders/OrderManagement";
 import StaffManagement from "../staff-management/StaffManagement"; // Thêm import cho component mới
 import ProfileModal from "../auth/ProfileModal";
 import { useAuth } from '../../hooks/useAuth';
+import TableManagement from "../tables/TableManagement";
 
 const KoreHouse = () => {
  const [page, setPage] = useState("home");
@@ -253,6 +255,16 @@ const KoreHouse = () => {
                     <FaEdit />
                   </button>
                 </div>
+                <div>
+                  {isAdmin && (
+                    <button
+                      onClick={() => setPage("tableManagement")}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md mr-3"
+                    >
+                      <FaTable className="mr-2" /> Quản lý bàn
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             
@@ -338,6 +350,8 @@ const KoreHouse = () => {
     {page === "menu" && <MenuPage onBack={() => setPage("home")} tableInfo={tableInfo} />}
     {page === "orderManagement" && <OrderManagement onBack={() => setPage("home")} />}
     {page === "staffManagement" && <StaffManagement onBack={() => setPage("home")} />}
+   {/* {page === "tableManagement" && <TableList onBack={() => setPage("home")} />} */}
+   {page === "tableManagement" && <TableManagement onBack={() => setPage("home")} />}
 </div>
   );
 };

@@ -1,10 +1,11 @@
 package vn.edu.iuh.fit.server.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import vn.edu.iuh.fit.server.enums.OrderStatus;
 
 public class UpdateOrderStatusDTO {
-    @NotBlank(message = "Trạng thái không được để trống")
+    @NotNull(message = "Trạng thái không được để trống")
     private OrderStatus status;
 
     private String paymentMethod;

@@ -149,11 +149,13 @@ public class OrderService {
     public OrderDTO updateOrderStatus(Long id, UpdateOrderStatusDTO updateOrderDTO) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng với ID: " + id));
+        System.out.println("===> Status: " + updateOrderDTO.getStatus());
+        System.out.println("===> Equals? " + "COMPLETED".equalsIgnoreCase(updateOrderDTO.getStatus().toString()));
 
         order.setStatus(updateOrderDTO.getStatus());
 
         // Nếu đơn hàng hoàn thành, cập nhật thời gian hoàn thành và các thông tin thanh toán
-        if ("completed".equals(updateOrderDTO.getStatus())) {
+        if (updateOrderDTO.getStatus() == OrderStatus.COMPLETED) {
             order.setCompletedAt(LocalDateTime.now());
             order.setPaymentMethod(updateOrderDTO.getPaymentMethod());
 
@@ -170,7 +172,8 @@ public class OrderService {
                 // Cộng thêm tiền tip vào tổng tiền
                 order.setTotalAmount(order.getTotalAmount() + updateOrderDTO.getTipAmount());
             }
-
+            order.setCompletedAt(LocalDateTime.now());
+            order.setPaymentMethod(updateOrderDTO.getPaymentMethod());
             // Cập nhật trạng thái bàn
             Table table = order.getTable();
             table.setStatus(TableStatus.AVAILABLE);
