@@ -32,6 +32,9 @@ public class OrderService {
     private final MenuItemRepository menuItemRepository;
     private final TableRepository tableRepository;
     private final UserRepository userRepository;
+    @Autowired
+    private NotificationService notificationService;
+
 
     @Autowired
     public OrderService(OrderRepository orderRepository,
@@ -141,6 +144,11 @@ public class OrderService {
         table.setStatus(TableStatus.IN_USE);
         table.setCustomerName(createOrderDTO.getCustomerName());
         tableRepository.save(table);
+        // Sau khi lưu đơn hàng và cập nhật trạng thái bàn
+        OrderDTO orderDTO = convertToOrderDTO(savedOrder);
+
+        // Gửi thông báo real-time qua WebSocket
+        notificationService.notifyNewOrder(orderDTO);
 
         return convertToOrderDTO(savedOrder);
     }
@@ -182,6 +190,15 @@ public class OrderService {
         }
 
         Order updatedOrder = orderRepository.save(order);
+        OrderDTO orderDTO = convertToOrderDTO(updatedOrder);
+
+        // Gửi thông báo cập nhật
+        notificationService.notifyOrderUpdated(orderDTO);
+        // Nếu là hoàn thành đơn và có thanh toán
+        if (updateOrderDTO.getStatus() == OrderStatus.COMPLETED &&
+                updateOrderDTO.getPaymentMethod() != null) {
+            notificationService.notifyPaymentReceived(orderDTO);
+        }
         return convertToOrderDTO(updatedOrder);
     }
 

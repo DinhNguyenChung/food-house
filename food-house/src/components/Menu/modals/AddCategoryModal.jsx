@@ -63,9 +63,15 @@ const AddCategoryModal = ({ show, handleClose }) => {
       newErrors.description = "Vui lòng nhập mô tả danh mục";
     }
     
-    if (!formData.image) {
+if (!formData.image) {
       newErrors.image = "Vui lòng nhập URL hình ảnh";
-    }
+    } else {
+      try {
+        new URL(formData.image);
+      } catch {
+        newErrors.image = "URL hình ảnh không hợp lệ";
+      }
+     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;

@@ -161,7 +161,7 @@ const LoginForm = ({show, handleClose}) => {
                   {/* Nút quay lại */}
                   <div className="text-center mt-4">
                     <button 
-                      onClick={() => setShowConfirmation(true) & setShowLoginForm(false)}
+                      onClick={() => {setShowConfirmation(true); setShowLoginForm(false);}}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       Quay lại

@@ -16,6 +16,9 @@ import {
   clearOrderErrors,
   resetOrderSuccess
 } from "../../redux/slices/orderSlice";
+import WebsocketService from '../../services/WebSocketService';
+import { Howl } from 'howler';
+import { useAuth } from '../../hooks/useAuth';
 
 // Helper để format thời gian
 const formatTimeElapsed = (dateString) => {
@@ -43,8 +46,14 @@ const OrderManagement = ({ onBack }) => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [tables, setTables] = useState([]);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
-
-  // Lấy dữ liệu orders khi component mount
+  // Get auth state from Redux
+    const auth = useSelector(state => state.auth);
+    // const isAuthenticated = auth?.isAuthenticated && auth?.user.user;
+    const user = auth?.user?.user || {};
+  const { isAdmin } = useAuth();
+    // Kiểm tra xem có phải là nhân viên có là quản lý hay không
+     const isManager = user?.role === "STAFF" && user?.department === "MANAGER";
+    // Lấy dữ liệu orders khi component mount
   useEffect(() => {
     dispatch(getAllOrders());
   }, [dispatch]);
@@ -170,6 +179,62 @@ const OrderManagement = ({ onBack }) => {
     // Refresh data
     dispatch(getAllOrders());
   };
+  // Đăng ký WebSocket để nhận thông báo
+  useEffect(() => {
+  const setupWebsocket = async () => {
+    try {
+      // Đăng ký nhận thông báo từ topic orders
+      await WebsocketService.subscribeToTopic('orders', handleNotification);
+      
+      // Nếu là admin hoặc manager, đăng ký nhận thông báo theo role
+      if (isAdmin) {
+        await WebsocketService.subscribeToRole('ADMIN', handleNotification);
+      }
+      
+      if (isManager) {
+        await WebsocketService.subscribeToRole('MANAGER', handleNotification);
+      }
+    } catch (error) {
+      console.error('Failed to connect to WebSocket', error);
+    }
+  };
+  
+  setupWebsocket();
+  
+  // Cleanup khi component unmount
+  return () => {
+    WebsocketService.unsubscribe('orders');
+    if (isAdmin) WebsocketService.unsubscribe('role_ADMIN');
+    if (isManager) WebsocketService.unsubscribe('role_MANAGER');
+  };
+}, [isAdmin, isManager]);
+// Hàm xử lý khi nhận thông báo
+const handleNotification = (notification) => {
+  console.log('Received notification:', notification);
+  
+  // Update UI based on notification type
+  if (notification.type === 'NEW_ORDER') {
+    // Refresh danh sách đơn hàng
+    dispatch(getAllOrders());
+     // Phát âm thanh thông báo
+    // const audio = new Audio('/sounds/notification.mp3');
+
+    // // Kiểm tra nếu audio bị tắt hoặc chưa sẵn sàng
+    // audio.oncanplaythrough = () => {
+    //   audio.volume = 1.0; // đảm bảo âm lượng không bằng 0
+    //   audio.play().catch((error) => {
+    //     console.error('Lỗi khi phát âm thanh:', error);
+    //   });
+    // };
+    const sound = new Howl({
+      src: ['/sounds/notification.mp3'],
+      volume: 1.0
+    });
+
+    sound.play();
+
+  }
+};
 
   return (
     <div className="container mx-auto py-6 max-w-7xl">
@@ -193,7 +258,7 @@ const OrderManagement = ({ onBack }) => {
           >
             <FaArrowLeft />
           </button>
-          <h1 className="text-2xl font-bold text-center flex-1">Quản lý hóa đơn</h1>
+          <h1 className="text-2xl font-bold text-center flex-1">Quản lý đặt bàn</h1>
         </div>
 
         {/* Search and filter */}

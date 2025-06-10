@@ -12,7 +12,8 @@ import {
   FaCog,
   FaFileInvoiceDollar,
   FaUsers,
-  FaTable
+  FaTable,
+  FaChartLine
 } from "react-icons/fa";
 import CallStaffModal from "../staff/CallStaffModal";
 import MenuPage from "../Menu/MenuPage";
@@ -26,6 +27,7 @@ import StaffManagement from "../staff-management/StaffManagement"; // Thêm impo
 import ProfileModal from "../auth/ProfileModal";
 import { useAuth } from '../../hooks/useAuth';
 import TableManagement from "../tables/TableManagement";
+import RevenueManagement from "../revenue/RevenueManagement";
 
 const KoreHouse = () => {
  const [page, setPage] = useState("home");
@@ -280,12 +282,20 @@ const KoreHouse = () => {
                 )}
                 
                 {(isAdmin || isManager) && (
+                 <>
                   <button
                     onClick={() => setPage("orderManagement")}
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
                   >
-                    <FaFileInvoiceDollar className="mr-2" /> Quản lý hóa đơn
+                    <FaFileInvoiceDollar className="mr-2" /> Quản lý đặt bàn
                   </button>
+                  <button
+                    onClick={() => setPage("revenueManagement")}
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg flex items-center transition-colors shadow-md"
+                  >
+                    <FaChartLine className="mr-2" /> Quản lý doanh thu
+                  </button>
+                 </>
                 )}
             </div>
           </div>
@@ -352,6 +362,7 @@ const KoreHouse = () => {
     {page === "staffManagement" && <StaffManagement onBack={() => setPage("home")} />}
    {/* {page === "tableManagement" && <TableList onBack={() => setPage("home")} />} */}
    {page === "tableManagement" && <TableManagement onBack={() => setPage("home")} />}
+     {page === "revenueManagement" && <RevenueManagement onBack={() => setPage("home")} />}
 </div>
   );
 };

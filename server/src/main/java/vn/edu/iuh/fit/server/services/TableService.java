@@ -22,6 +22,8 @@ public class TableService {
 
     @Autowired
     private TableMapper tableMapper;
+    @Autowired
+    private NotificationService notificationService;
 
     public List<TableDTO> getAllTables() {
         List<Table> tables = tableRepository.findAll();
@@ -43,6 +45,10 @@ public class TableService {
                 .orElseThrow(() -> new ResourceNotFoundException("Table not found with ID: " + id));
         table.setStatus(updateTableStatusDTO.getStatus());
         Table updatedTable = tableRepository.save(table);
+        TableDTO tableDTO = tableMapper.tableToTableDTO(updatedTable);
+
+        // Gửi thông báo cập nhật trạng thái bàn
+        notificationService.notifyTableStatusChanged(tableDTO);
         return tableMapper.tableToTableDTO(updatedTable);
     }
 }

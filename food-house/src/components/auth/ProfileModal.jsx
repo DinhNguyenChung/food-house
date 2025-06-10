@@ -41,11 +41,13 @@ const ProfileModal = ({ show, handleClose }) => {
       errors.currentPassword = "Vui lòng nhập mật khẩu hiện tại";
     }
     
-    if (!passwordData.newPassword) {
+if (!passwordData.newPassword) {
       errors.newPassword = "Vui lòng nhập mật khẩu mới";
-    } else if (passwordData.newPassword.length < 6) {
-      errors.newPassword = "Mật khẩu mới phải có ít nhất 6 ký tự";
-    }
+    } else if (passwordData.newPassword.length < 8) {
+      errors.newPassword = "Mật khẩu mới phải có ít nhất 8 ký tự";
+    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(passwordData.newPassword)) {
+      errors.newPassword = "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường và 1 số";
+     }
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       errors.confirmPassword = "Mật khẩu xác nhận không khớp";

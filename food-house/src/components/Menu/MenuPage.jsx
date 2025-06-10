@@ -36,7 +36,8 @@ const MenuPage = ({ onBack, tableInfo }) => {
 
   // Lấy thông tin user từ Redux store để kiểm tra quyền admin
   const auth = useSelector(state => state.auth);
-  const user = auth?.user?.user || {};
+  const userData = auth?.user || {};
+  const user = userData?.user || {};
   const isAdmin = user?.role === "ADMIN";
 
   // Tải dữ liệu khi component mount

@@ -97,7 +97,7 @@ const CartSummary = ({ cart, tableInfo, removeFromCart, placeOrder, clearCart })
           <div className="p-4 bg-blue-50">
             <div className="flex justify-between">
               <span className="font-medium">Bàn:</span>
-              <span>{tableInfo.tableId ? `Bàn ${tableInfo.tableId}` : "Chưa chọn bàn"}</span>
+              <span>{tableInfo?.tableId ? `Bàn ${tableInfo.tableId}` : "Chưa chọn bàn"}</span>
             </div>
             <div className="flex justify-between mt-1">
               <span className="font-medium">Khách hàng:</span>

@@ -88,9 +88,17 @@ const AddMenuItemModal = ({ show, handleClose }) => {
       newErrors.description = "Vui lòng nhập mô tả món ăn";
     }
     
-    if (!formData.image) {
-      newErrors.image = "Vui lòng nhập URL hình ảnh";
-    }
+if (!formData.image) {
+   newErrors.image = "Vui lòng nhập URL hình ảnh";
+} else {
+  try {
+    new URL(formData.image);
+  } catch (error) {
+    // Nếu URL không hợp lệ, thêm lỗi
+    console.error("Invalid image URL:", error);
+    newErrors.image = "Vui lòng nhập URL hợp lệ";
+  }
+ }
     
     if (!formData.categoryId) {
       newErrors.categoryId = "Vui lòng chọn danh mục";
