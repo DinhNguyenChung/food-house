@@ -85,11 +85,17 @@ public class OrderService {
         // Kiểm tra bàn tồn tại
         Table table = tableRepository.findById(createOrderDTO.getTableId())
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bàn với ID: " + createOrderDTO.getTableId()));
-
+        // Kiểm tra bàn đã đặt chưa
+        // Kiểm tra bàn đã được sử dụng chưa
+        if (table.getStatus() == TableStatus.IN_USE) {
+            throw new IllegalStateException("Bàn đã được đặt và đang sử dụng. Vui lòng gọi thêm món nếu quý khách cần!");
+        }
         // Kiểm tra nhân viên tồn tại
-        User staff = userRepository.findById(createOrderDTO.getStaffId())
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với ID: " + createOrderDTO.getStaffId()));
-
+        User staff = null;
+        if (createOrderDTO.getStaffId() != null) {
+            staff = userRepository.findById(createOrderDTO.getStaffId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với ID: " + createOrderDTO.getStaffId()));
+        }
         // Tạo đơn hàng mới
         Order order = new Order();
         order.setTable(table);
@@ -161,11 +167,17 @@ public class OrderService {
         System.out.println("===> Equals? " + "COMPLETED".equalsIgnoreCase(updateOrderDTO.getStatus().toString()));
 
         order.setStatus(updateOrderDTO.getStatus());
+        User cashier = null;
+        if (updateOrderDTO.getCashierId() != null) {
+            cashier = userRepository.findById(updateOrderDTO.getCashierId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhân viên với ID: " + updateOrderDTO.getCashierId()));
+        }
 
         // Nếu đơn hàng hoàn thành, cập nhật thời gian hoàn thành và các thông tin thanh toán
         if (updateOrderDTO.getStatus() == OrderStatus.COMPLETED) {
             order.setCompletedAt(LocalDateTime.now());
             order.setPaymentMethod(updateOrderDTO.getPaymentMethod());
+            order.setCashier(cashier);
 
             // Cập nhật giảm giá và tiền tip nếu có
             if (updateOrderDTO.getDiscountPercent() != null) {

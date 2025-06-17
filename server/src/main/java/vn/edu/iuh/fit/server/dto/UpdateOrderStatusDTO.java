@@ -2,6 +2,7 @@ package vn.edu.iuh.fit.server.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import vn.edu.iuh.fit.server.entities.User;
 import vn.edu.iuh.fit.server.enums.OrderStatus;
 
 public class UpdateOrderStatusDTO {
@@ -13,6 +14,8 @@ public class UpdateOrderStatusDTO {
     private Double discountPercent;
 
     private Double tipAmount;
+
+    private Long cashierId;
 
     // Getters and Setters
     public OrderStatus getStatus() {
@@ -45,5 +48,13 @@ public class UpdateOrderStatusDTO {
 
     public void setTipAmount(Double tipAmount) {
         this.tipAmount = tipAmount;
+    }
+
+    public Long getCashierId() {
+        return cashierId;
+    }
+
+    public void setCashierId(Long cashierId) {
+        this.cashierId = cashierId;
     }
 }

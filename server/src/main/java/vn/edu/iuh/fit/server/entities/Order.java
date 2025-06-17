@@ -28,7 +28,7 @@ public class Order {
     private String customerName;
     private Double totalAmount;
     
-    // Trạng thái: pending, completed, cancelled
+    // Trạng thái: pending,CONFIRMED, completed, cancelled
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
     
@@ -41,7 +41,10 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User staff;
-    
+    @ManyToOne
+    @JoinColumn(name = "cashier_id")
+    private User cashier;
+
     // Thêm các trường mới từ frontend
     private Double discountPercent;
     private Double tipAmount;

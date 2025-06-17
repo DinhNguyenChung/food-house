@@ -32,10 +32,10 @@ const CartSummary = ({ cart, tableInfo, removeFromCart, placeOrder, clearCart })
     }
     
     // Kiểm tra nếu chưa đăng nhập
-    if (!user.id) {
-      placeOrder(); // Gọi hàm thông báo cần đăng nhập
-      return;
-    }
+    // if (!user.id) {
+    //   placeOrder(); // Gọi hàm thông báo cần đăng nhập
+    //   return;
+    // }
     
     // Tạo dữ liệu đơn hàng
     const orderData = {

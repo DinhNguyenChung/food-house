@@ -19,7 +19,7 @@ public class CreateOrderDTO {
 
     private String customerName;
 
-    @NotNull(message = "ID nhân viên không được để trống")
+//    @NotNull(message = "ID nhân viên không được để trống")
     private Long staffId;
 
     @Valid

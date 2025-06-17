@@ -162,16 +162,16 @@ const MenuPage = ({ onBack, tableInfo }) => {
       return;
     }
     
-    // Kiểm tra xem người dùng đã đăng nhập chưa
-    if (!user.id) {
-      setNotification({
-        show: true,
-        message: "Vui lòng đăng nhập để đặt món!",
-        type: "error"
-      });
-      setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
-      return;
-    }
+    // // Kiểm tra xem người dùng đã đăng nhập chưa
+    // if (!user.id) {
+    //   setNotification({
+    //     show: true,
+    //     message: "Vui lòng đăng nhập để đặt món!",
+    //     type: "error"
+    //   });
+    //   setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
+    //   return;
+    // }
 
     // Đặt món thành công
     setNotification({

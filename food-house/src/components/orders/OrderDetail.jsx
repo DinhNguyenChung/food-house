@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FaTimes, FaPrint, FaCreditCard, FaMoneyBill, FaSpinner } from "react-icons/fa";
 import { getOrderById, updateOrderStatus } from "../../redux/slices/orderSlice";
 
 const OrderDetail = ({ table, orderId, onClose, onPayment }) => {
   const dispatch = useDispatch();
+   const { user } = useSelector(state => state.auth);
+    const userData = user?.user || user || {}; 
   const { selectedOrder, loading } = useSelector(state => state.order);  
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discountPercent, setDiscountPercent] = useState(0);
@@ -40,7 +42,8 @@ const OrderDetail = ({ table, orderId, onClose, onPayment }) => {
       status: "COMPLETED",
       paymentMethod: paymentMethod,
       discountPercent: discountPercent,
-      tipAmount: tipAmount
+      tipAmount: tipAmount,
+      cashierId: userData.id, // ID nguời thu ngân
     };
     
     dispatch(updateOrderStatus({ id: orderId, statusData }))

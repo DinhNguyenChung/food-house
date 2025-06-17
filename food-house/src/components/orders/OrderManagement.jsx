@@ -8,13 +8,18 @@ import {
   FaExclamationTriangle,
   FaFileInvoiceDollar,
   FaBan,
-  FaSpinner
+  FaSpinner,
+  FaBell
 } from "react-icons/fa";
 import OrderDetail from "./OrderDetail";
+import ConfirmOrderModal from "./ConfirmOrderModal";
+import OrderHistoryModal from "./OrderHistoryModal";
 import { 
   getAllOrders, 
   clearOrderErrors,
-  resetOrderSuccess
+  resetOrderSuccess,
+  updateOrderStatus,
+  getOrderById
 } from "../../redux/slices/orderSlice";
 import WebsocketService from '../../services/WebSocketService';
 import { Howl } from 'howler';
@@ -46,6 +51,12 @@ const OrderManagement = ({ onBack }) => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [tables, setTables] = useState([]);
   const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+  const [confirmModal, setConfirmModal] = useState({ open: false, order: null });
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState("");
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [orderHistory, setOrderHistory] = useState([]);
+  const [historyLoadingId, setHistoryLoadingId] = useState(null);
   // Get auth state from Redux
     const auth = useSelector(state => state.auth);
     // const isAuthenticated = auth?.isAuthenticated && auth?.user.user;
@@ -107,7 +118,7 @@ const OrderManagement = ({ onBack }) => {
         
         const latestOrder = tableOrders[0];
         
-        if (latestOrder && (latestOrder.status === "PENDING" || latestOrder.status === "PROCESSING")) {
+        if (latestOrder && (latestOrder.status === "CONFIRMED" || latestOrder.status === "PROCESSING")) {
           return {
             id: tableId,
             status: "occupied",
@@ -132,6 +143,19 @@ const OrderManagement = ({ onBack }) => {
       setTables(tablesList);
     }
   }, [orders]);
+
+  // Cập nhật lịch sử đơn hàng mới nhất (tối đa 5, trạng thái PENDING hoặc CANCELLED)
+  useEffect(() => {
+    if (orders && orders.length > 0) {
+      const sorted = [...orders]
+        .filter(o => o.status === "PENDING" || o.status === "CANCELLED")
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 5);
+      setOrderHistory(sorted);
+    }
+  }, [orders]);
+
+  const pendingCount = orderHistory.filter(o => o.status === "PENDING").length;
 
   // Lọc bàn theo tìm kiếm và trạng thái
   const filteredTables = tables.filter(table => {
@@ -183,14 +207,10 @@ const OrderManagement = ({ onBack }) => {
   useEffect(() => {
   const setupWebsocket = async () => {
     try {
-      // Đăng ký nhận thông báo từ topic orders
       await WebsocketService.subscribeToTopic('orders', handleNotification);
-      
-      // Nếu là admin hoặc manager, đăng ký nhận thông báo theo role
       if (isAdmin) {
         await WebsocketService.subscribeToRole('ADMIN', handleNotification);
       }
-      
       if (isManager) {
         await WebsocketService.subscribeToRole('MANAGER', handleNotification);
       }
@@ -198,41 +218,79 @@ const OrderManagement = ({ onBack }) => {
       console.error('Failed to connect to WebSocket', error);
     }
   };
-  
   setupWebsocket();
-  
-  // Cleanup khi component unmount
   return () => {
     WebsocketService.unsubscribe('orders');
     if (isAdmin) WebsocketService.unsubscribe('role_ADMIN');
     if (isManager) WebsocketService.unsubscribe('role_MANAGER');
   };
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, [isAdmin, isManager]);
 // Hàm xử lý khi nhận thông báo
-const handleNotification = (notification) => {
+const handleNotification = async (notification) => {
   console.log('Received notification:', notification);
-  
-  // Update UI based on notification type
   if (notification.type === 'NEW_ORDER') {
-    // Refresh danh sách đơn hàng
     dispatch(getAllOrders());
-     // Phát âm thanh thông báo
-    // const audio = new Audio('/sounds/notification.mp3');
-
-    // // Kiểm tra nếu audio bị tắt hoặc chưa sẵn sàng
-    // audio.oncanplaythrough = () => {
-    //   audio.volume = 1.0; // đảm bảo âm lượng không bằng 0
-    //   audio.play().catch((error) => {
-    //     console.error('Lỗi khi phát âm thanh:', error);
-    //   });
-    // };
-    const sound = new Howl({
-      src: ['/sounds/notification.mp3'],
-      volume: 1.0
-    });
-
+    const sound = new Howl({ src: ['/sounds/notification.mp3'], volume: 1.0 });
     sound.play();
+    // Only show modal for admin/manager
+    if (isAdmin || isManager) {
+      try {
+        // Fetch order details if not included
+        let order = notification.order || notification.data;
+        if (!order && notification.data.id) {
+          const res = await dispatch(getOrderById(notification.orderId));
+          order = res.payload;
+        }
+        console.log('Order for modal:', notification.data);
+        if (order) {
+          setConfirmModal({ open: true, order });
+          setModalError("");
+        } else {
+          setModalError("Không thể lấy thông tin đơn hàng mới.");
+        }
+      } catch {
+        setModalError("Không thể lấy thông tin đơn hàng mới.");
+      }
+    }
+  }
+};
 
+const handleConfirmOrder = async () => {
+  if (!confirmModal.order) return;
+  setModalLoading(true);
+  setModalError("");
+  try {
+    await dispatch(updateOrderStatus({ id: confirmModal.order.id, statusData: { status: "CONFIRMED" } })).unwrap();
+    setConfirmModal({ open: false, order: null });
+  } catch (e) {
+    setModalError(e?.message || "Lỗi xác nhận đơn hàng.");
+  } finally {
+    setModalLoading(false);
+  }
+};
+
+const handleCancelOrder = async () => {
+  if (!confirmModal.order) return;
+  setModalLoading(true);
+  setModalError("");
+  try {
+    await dispatch(updateOrderStatus({ id: confirmModal.order.id, statusData: { status: "CANCELLED" } })).unwrap();
+    setConfirmModal({ open: false, order: null });
+  } catch (e) {
+    setModalError(e?.message || "Lỗi hủy đơn hàng.");
+  } finally {
+    setModalLoading(false);
+  }
+};
+
+const handleHistoryConfirm = async (order) => {
+  setHistoryLoadingId(order.id);
+  try {
+    await dispatch(updateOrderStatus({ id: order.id, statusData: { status: "CONFIRMED" } })).unwrap();
+    setHistoryLoadingId(null);
+  } catch {
+    setHistoryLoadingId(null);
   }
 };
 
@@ -259,6 +317,21 @@ const handleNotification = (notification) => {
             <FaArrowLeft />
           </button>
           <h1 className="text-2xl font-bold text-center flex-1">Quản lý đặt bàn</h1>
+          {/* Bell notification icon */}
+          <div className="relative ml-4">
+            <button
+              className="w-10 h-10 flex items-center justify-center rounded-full border border-neutral-200 text-neutral-600 hover:bg-yellow-100 transition-colors focus:outline-none"
+              onClick={() => setHistoryModalOpen(true)}
+              title="Thông báo đơn mới"
+            >
+              <FaBell className="text-2xl" />
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                  {pendingCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Search and filter */}
@@ -413,6 +486,25 @@ const handleNotification = (notification) => {
           onPayment={handlePayment}
         />
       )}
+
+      {/* Confirm Order Modal for NEW_ORDER notification */}
+      <ConfirmOrderModal
+        order={confirmModal.order}
+        open={confirmModal.open}
+        onConfirm={handleConfirmOrder}
+        onCancel={handleCancelOrder}
+        loading={modalLoading}
+        error={modalError}
+      />
+
+      {/* Order History Modal */}
+      <OrderHistoryModal
+        open={historyModalOpen}
+        orders={orderHistory}
+        onClose={() => setHistoryModalOpen(false)}
+        onConfirm={handleHistoryConfirm}
+        loadingId={historyLoadingId}
+      />
     </div>
   );
 };
