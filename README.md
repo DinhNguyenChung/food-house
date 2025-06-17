@@ -3,10 +3,9 @@
 ```markdown
 # 🍽️ Food House - Restaurant Management System
 
-> Ứng dụng web giúp quản lý nhà hàng một cách hiệu quả: từ thực đơn, đơn hàng, nhân sự đến thanh toán.
+> Ứng dụng web giúp quản lý nhà hàng một cách hiệu quả: từ thực đơn, đơn hàng, nhân sự.
 
 ![Food House Logo](https://i.ibb.co/dMfN1vP/Brown-Simple-Cute-Catering-Logo-removebg-preview.png)
-
 
 ## 🚀 Tính Năng Chính
 
@@ -15,7 +14,6 @@
 - 🍽️ **Đặt món**: Chọn món, thêm ghi chú và gửi đơn hàng.
 - 🪑 **Theo dõi bàn**: Kiểm tra trạng thái bàn đang sử dụng.
 - ✋ **Gọi nhân viên**: Gửi yêu cầu hỗ trợ trực tiếp.
-- 💳 **Yêu cầu thanh toán**: Thanh toán nhanh qua ứng dụng.
 
 ### 👨‍🍳 Dành cho Nhân Viên & Quản Lý
 - 📦 **Quản lý đơn hàng**: Theo dõi và xử lý đơn theo thời gian thực.
@@ -113,7 +111,7 @@ cd server
 | ------------ | ---------------------------------------------------------------- |
 | **Admin**    | Toàn quyền quản lý hệ thống (nhân viên, đơn hàng, thực đơn, bàn) |
 | **Manager**  | Quản lý đơn hàng, thống kê, xử lý thanh toán                     |
-| **Staff**    | Xử lý đơn hàng, hỗ trợ khách hàng                                |
+| **Staff**    | Xử lý đơn hàng,đặt món, hỗ trợ khách hàng                        |
 | **Customer** | Đặt món, xem bàn, gọi nhân viên, thanh toán                      |
 
 ---
